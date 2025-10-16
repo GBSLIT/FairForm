@@ -51,6 +51,7 @@
       gap: 20px;
     }
 
+    /* Right-aligned logo */
     .right-logos {
       display: flex;
       gap: 14px;
@@ -110,25 +111,40 @@
       margin: 8px 0;
     }
 
-    .footer-note {
-      margin-top: 40px;
-      font-size: 14px;
+    .id-box {
+      margin-top: 18px;
+      display: inline-block;
+      padding: 12px 16px;
+      background: #f4f7ff;
+      border: 1px dashed rgba(11,110,253,0.25);
+      border-radius: 8px;
+      font-weight: 700;
+      color: #0b6efd;
+      letter-spacing: 0.6px;
+    }
+
+    .countdown {
+      margin-top: 14px;
       color: #666;
     }
 
-    .btn {
+    a.button {
       display: inline-block;
-      margin-top: 24px;
-      padding: 12px 24px;
+      margin-top: 18px;
+      padding: 10px 18px;
       background: var(--accent);
       color: #fff;
+      text-decoration: none;
       border-radius: 8px;
       font-weight: 600;
-      text-decoration: none;
-      transition: background 0.3s;
+      transition: background 0.25s;
     }
-    .btn:hover {
-      background: #094bba;
+    a.button:hover { background: #094bba; }
+
+    .footer-note {
+      margin-top: 28px;
+      font-size: 14px;
+      color: #666;
     }
   </style>
 </head>
@@ -148,8 +164,15 @@
     <h1>Thank You!</h1>
     <p>We have received your submission and will send a confirmation email to you shortly.</p>
     <p>We appreciate your time and look forward to connecting soon.</p>
+    <p>Reference (Submission) ID:</p>
 
-    <a class="btn" href="form.html">Submit Another Response</a>
+    <div id="idBox" class="id-box">—</div>
+
+    <div class="countdown" id="countdown">Redirecting to the form in 10 seconds...</div>
+
+    <div style="margin-top:12px">
+      <a id="goNow" class="button" href="/">Go back to form now</a>
+    </div>
 
     <div class="footer-note">
       © <span id="year"></span> Global Base — Your Partners In Product.
@@ -157,14 +180,42 @@
   </div>
 
   <script>
-    // Dynamic year
+    // show year
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Prevent going back to the filled form
-    history.pushState(null, null, location.href);
-    window.onpopstate = function () {
-      history.go(1);
+    // get id from query (only show ID, no folder link)
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id') || '';
+    const idBox = document.getElementById('idBox');
+    idBox.textContent = id || 'N/A';
+
+    // redirect back to form after 10s using replace + timestamp to force fresh load
+    const countdownEl = document.getElementById('countdown');
+    const goNow = document.getElementById('goNow');
+
+    let seconds = 10;
+    const update = () => {
+      countdownEl.textContent = `Redirecting to the form in ${seconds} second${seconds === 1 ? '' : 's'}...`;
+      seconds--;
+      if (seconds < 0) {
+        // use replace so thank-you page is not kept in history
+        const target = '/?r=' + Date.now();
+        window.location.replace(target);
+      }
     };
+
+    // allow immediate manual return
+    goNow.addEventListener('click', (e) => {
+      // navigate with replace to force fresh load
+      e.preventDefault();
+      window.location.replace('/?r=' + Date.now());
+    });
+
+    update();
+    const timer = setInterval(update, 1000);
+
+    // If user arrives with no ID, still redirect after countdown
+    window.addEventListener('beforeunload', () => { clearInterval(timer); });
   </script>
 </body>
 </html>
