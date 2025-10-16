@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thank You | Global Base</title>
+  <style>
+    :root {
+      --radius: 12px;
+      --pad: 18px;
+      --accent: #0b6efd;
+      --maxw: 820px;
+    }
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, Arial, Helvetica, sans-serif;
+      margin: 0;
+      color: #111;
+      background: url('images/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+    }
+
+    /* HEADER BAR */
+    .header-bar {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(245,250,248,1) 0%, rgba(235,245,243,1) 100%);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      padding: 14px 40px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      width: 100%;
+      max-width: var(--maxw);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .right-logos {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-left: auto;
+      padding-right: 40px;
+    }
+
+    .right-logos .small-logo {
+      height: 56px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+    }
+
+    @media (max-width: 900px) {
+      .header-content {
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+      }
+      .right-logos {
+        margin-left: 0;
+        order: 2;
+      }
+      .right-logos .small-logo {
+        height: 44px;
+      }
+    }
+
+    body { padding-top: 140px; }
+
+    /* THANK YOU CARD */
+    .card {
+      background: rgba(255,255,255,0.88);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(10,10,30,0.18);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.6);
+      text-align: center;
+      max-width: var(--maxw);
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #0b6efd;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333;
+      margin: 8px 0;
+    }
+
+    a.folder-link {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 18px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.25s;
+    }
+
+    a.folder-link:hover {
+      background: #094bba;
+    }
+
+    .footer-note {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header-bar" role="banner">
+    <div class="header-content">
+      <div class="right-logos">
+        <img class="small-logo" src="images/LOGO PNG.png" alt="Global Base">
+      </div>
+    </div>
+  </header>
+
+  <div class="card" role="main">
+    <h1>Thank You!</h1>
+    <p>We have received your submission and will send a confirmation email to you shortly.</p>
+    <p>We appreciate your time and look forward to connecting soon.</p>
+
+    <div id="folder-container"></div>
+
+    <div class="footer-note">
+      © <span id="year"></span> Global Base — Your Partners In Product.
+    </div>
+  </div>
+
+  <script>
+    // dynamic year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // extract folder link from query string
+    const params = new URLSearchParams(window.location.search);
+    const folder = params.get('folder');
+    const id = params.get('id');
+    const container = document.getElementById('folder-container');
+
+    if (folder) {
+      const link = document.createElement('a');
+      link.href = folder;
+      link.textContent = 'Open Folder in OneDrive';
+      link.className = 'folder-link';
+      link.target = '_blank';
+      container.appendChild(link);
+
+      const idText = document.createElement('p');
+      idText.style.marginTop = '8px';
+      idText.textContent = `Reference ID: ${id || ''}`;
+      container.appendChild(idText);
+    } else {
+      const msg = document.createElement('p');
+      msg.textContent = 'Your submission has been received successfully.';
+      container.appendChild(msg);
+    }
+  </script>
+</body>
+</html>
