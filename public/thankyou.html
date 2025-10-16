@@ -85,15 +85,16 @@
 
     /* THANK YOU CARD */
     .card {
-      background: rgba(255,255,255,0.88);
+      background: rgba(255, 255, 255, 0.88);
       padding: 40px;
       border-radius: 16px;
-      box-shadow: 0 18px 40px rgba(10,10,30,0.18);
+      box-shadow: 0 18px 40px rgba(10, 10, 30, 0.18);
       backdrop-filter: blur(6px);
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid rgba(255, 255, 255, 0.6);
       text-align: center;
       max-width: var(--maxw);
       width: 100%;
+      margin-top: 20px;
     }
 
     h1 {
@@ -108,12 +109,26 @@
       color: #333;
       margin: 8px 0;
     }
-    }
 
     .footer-note {
       margin-top: 40px;
       font-size: 14px;
       color: #666;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #094bba;
     }
   </style>
 </head>
@@ -128,12 +143,13 @@
     </div>
   </header>
 
+  <!-- MAIN CARD -->
   <div class="card" role="main">
     <h1>Thank You!</h1>
     <p>We have received your submission and will send a confirmation email to you shortly.</p>
     <p>We appreciate your time and look forward to connecting soon.</p>
 
-    <div id="folder-container"></div>
+    <a class="btn" href="form.html">Submit Another Response</a>
 
     <div class="footer-note">
       © <span id="year"></span> Global Base — Your Partners In Product.
@@ -141,32 +157,14 @@
   </div>
 
   <script>
-    // dynamic year
+    // Dynamic year
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // extract folder link from query string
-    const params = new URLSearchParams(window.location.search);
-    const folder = params.get('folder');
-    const id = params.get('id');
-    const container = document.getElementById('folder-container');
-
-    if (folder) {
-      const link = document.createElement('a');
-      link.href = folder;
-      link.textContent = 'Open Folder in OneDrive';
-      link.className = 'folder-link';
-      link.target = '_blank';
-      container.appendChild(link);
-
-      const idText = document.createElement('p');
-      idText.style.marginTop = '8px';
-      idText.textContent = `Reference ID: ${id || ''}`;
-      container.appendChild(idText);
-    } else {
-      const msg = document.createElement('p');
-      msg.textContent = 'Your submission has been received successfully.';
-      container.appendChild(msg);
-    }
+    // Prevent going back to the filled form
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+      history.go(1);
+    };
   </script>
 </body>
 </html>
