@@ -1,103 +1,350 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Exhibition Booth Visit Data Collection</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body{font-family:system-ui,Arial;padding:24px;max-width:900px;margin:0 auto}
-    .card{border:1px solid #ddd;border-radius:12px;padding:20px}
-    label{display:block;margin:12px 0 6px}
-    input,textarea,select{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    button{padding:12px 18px;border:0;border-radius:10px;cursor:pointer}
+    :root {
+      --radius:12px;
+      --pad:18px;
+      --accent:#0b6efd;
+      --maxw:920px;
+    }
+    * { box-sizing:border-box; }
+
+    body {
+      font-family:system-ui,Arial,Helvetica,sans-serif;
+      margin:0;
+      color:#111;
+      background:url('images/background.jpg') no-repeat center center fixed;
+      background-size:cover;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:40px 20px;
+      flex-direction:column;
+    }
+
+    .wrap {
+      width:100%;
+      max-width:var(--maxw);
+      z-index:2;
+      margin:auto;
+    }
+
+    /* HEADER BAR — full width, flush with screen edges */
+    .header-bar{
+      width:100%;
+      background: linear-gradient(180deg, rgba(245,250,248,1) 0%, rgba(235,245,243,1) 100%);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      padding: 14px 40px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    .header-content{
+      width:100%;
+      max-width:var(--maxw);
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
+    }
+
+    /* Centered banner image */
+    .center-banner img{
+      height:72px;
+      max-width:680px;
+      width:100%;
+      object-fit:contain;
+      display:block;
+      margin:0 auto;
+    }
+
+    /* Right side logos */
+    .right-logos{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  margin-left:auto;
+  padding-right:1200px; /* Add spacing from the right edge */
+}
+
+    .right-logos .small-logo{
+      height:56px;
+      width:auto;
+      object-fit:contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+    }
+
+    /* Responsive header */
+    @media(max-width:900px){
+      .header-content{
+        flex-direction:column;
+        gap:8px;
+        justify-content:center;
+      }
+      .right-logos{
+        margin-left:0;
+        order:2;
+      }
+      .center-banner{ order:1; }
+      .center-banner img{ height:58px; }
+      .right-logos .small-logo{ height:44px; }
+    }
+
+    /* Adjust body content padding to avoid overlap from fixed header */
+    body { padding-top: 140px; }
+
+    /* FORM CARD */
+    .card {
+      background:rgba(255,255,255,0.86);
+      padding:var(--pad);
+      border-radius:12px;
+      box-shadow:0 18px 40px rgba(10,10,30,0.18);
+      backdrop-filter:blur(6px);
+      border:1px solid rgba(255,255,255,0.6);
+      margin-top:20px;
+    }
+
+    h1 { margin:0 0 12px; font-size:22px; text-align:center; }
+    label { display:block; font-size:17px; margin:10px 0 8px; color:#333; }
+    input,textarea,select,button { font-size:15px; }
+    input,textarea,select {
+      width:100%;
+      padding:12px;
+      border:1px solid #e6e9ef;
+      border-radius:10px;
+      background:#fff;
+    }
+    textarea { min-height:90px; resize:vertical; }
+    .muted { color:#666; font-size:13px; margin-top:6px; }
+    .field { margin-bottom:14px; }
+    .actions { display:flex; gap:10px; align-items:center; margin-top:16px; justify-content:center; }
+    button {
+      background:var(--accent);
+      color:#fff;
+      border:0;
+      padding:12px 24px;
+      border-radius:10px;
+      cursor:pointer;
+      transition:background 0.2s ease;
+    }
+    button:hover { background:#0957c3; }
+    .status { margin-left:8px; font-weight:600; color:#555; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media(max-width:720px){ .two{grid-template-columns:1fr;} }
+    .phone-row {
+      display:grid;
+      grid-template-columns:150px 1fr;
+      gap:10px;
+      align-items:end;
+    }
+    @media(max-width:720px){
+      .phone-row { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
-  <h1>Exhibition Booth Visit Data Collection</h1>
-  <div class="card">
-    <form id="f" enctype="multipart/form-data">
-      <label>Fair Name</label>
-      <input name="fairName" required>
 
-      <label>Company Name</label>
-      <input name="companyName" required>
+  <!-- HEADER BAR -->
+  <header class="header-bar" role="banner" aria-label="Top banner">
+    <div class="header-content">
+      <div class="center-banner" aria-hidden="true">
+              </div>
 
-      <div class="grid">
-        <div>
+      <div class="right-logos" aria-hidden="true">
+        <img class="small-logo" src="images/LOGO PNG.png" alt="Global Base" />
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" role="form" aria-labelledby="formTitle">
+      <h1 id="formTitle">Exhibition Booth Visit Data Collection</h1>
+
+      <form id="f" autocomplete="on">
+        <div class="field">
+          <label>Fair Name</label>
+          <input name="fairName" required placeholder="e.g. Ambiente 2026" />
+        </div>
+
+        <div class="field">
+          <label>Company Name</label>
+          <input name="companyName" required placeholder="Company name" />
+        </div>
+
+        <div class="field">
           <label>Contact Person Name</label>
-          <input name="contactPerson" required>
+          <input name="contactPerson" required placeholder="Full name" />
         </div>
-        <div>
-          <label>Contact Email ID</label>
-          <input name="contactEmail" type="email" required>
-        </div>
-      </div>
 
-      <div class="grid">
-        <div>
-          <label>Mobile Number</label>
-          <input name="mobileNumber">
+        <div class="field">
+          <label>Contact Email</label>
+          <input name="contactEmail" type="email" required placeholder="name@company.com" />
         </div>
-        <div>
+
+        <div class="field">
+          <label>Phone Number (include country code)</label>
+          <div class="phone-row">
+            <input name="countryCode" placeholder="+852" />
+            <input name="phone" type="tel" placeholder="Phone number without leading zero" />
+          </div>
+          <div class="muted">Enter country code and local number. We'll store it as one combined value.</div>
+        </div>
+
+        <div class="field">
           <label>Designation or Role</label>
-          <input name="designation">
+          <input name="designation" placeholder="e.g. Purchasing Manager" />
         </div>
-      </div>
 
-      <label>Key Product Category</label>
-      <input name="keyProductCategory">
+        <div class="field">
+          <label>Key Product Category</label>
+          <input name="keyProductCategory" placeholder="eg. Outdoor rattan furniture" />
+        </div>
 
-      <label>Company Type Manufacturer or Trading or Designer or Other</label>
-      <input name="companyType">
+        <div class="field">
+          <label>Company Type</label>
+          <select name="companyType">
+            <option value="">Select</option>
+            <option>Manufacturer</option>
+            <option>Trading</option>
+            <option>Designer</option>
+            <option>Wholesaler</option>
+            <option>Other</option>
+          </select>
+        </div>
 
-      <label>Materials wood or rattan or metal or glass etc</label>
-      <input name="materials">
+        <div class="field">
+          <label>Materials (comma separated)</label>
+          <input name="materials" placeholder="wood, rattan, metal, glass" />
+        </div>
 
-      <label>Full Address</label>
-      <textarea name="fullAddress" rows="2"></textarea>
+        <div class="field">
+          <label>Full Address</label>
+          <textarea name="fullAddress" placeholder="Street, City, Country"></textarea>
+        </div>
 
-      <label>Company Location City or Country or Nearest Airport or Train Station</label>
-      <input name="companyLocation">
+        <hr style="border:none;border-top:1px solid rgba(0,0,0,0.06);margin:10px 0">
 
-      <label>Global Base contact person name</label>
-      <input name="gbContact">
+        <div class="field">
+          <label>City</label>
+          <input name="city" placeholder="eg. Jakarta" />
+        </div>
 
-      <hr style="margin:18px 0">
+        <div class="field">
+          <label>Country</label>
+          <input name="country" placeholder="eg. Indonesia" />
+        </div>
 
-      <label>Visiting Card upload one or more</label>
-      <input name="visitingCard" type="file" multiple accept="image/*,application/pdf">
+        <div class="field">
+          <label>Province / State</label>
+          <input name="provinceState" placeholder="eg. West Java" />
+        </div>
 
-      <label>Booth Photos or Product Photos upload one or more</label>
-      <input name="boothPhotos" type="file" multiple accept="image/*,video/*">
+        <div class="field two">
+          <div>
+            <label>Nearest Airport</label>
+            <input name="nearestAirport" placeholder="eg. Soekarno–Hatta (CGK)" />
+          </div>
+          <div>
+            <label>Nearest Train Station</label>
+            <input name="nearestTrain" placeholder="eg. Gambir Station" />
+          </div>
+        </div>
 
-      <label>Catalogue upload one or more</label>
-      <input name="catalogue" type="file" multiple accept=".pdf,.ppt,.pptx,image/*,video/*,.doc,.docx">
+        <div class="field">
+          <label>Global Base Contact Person</label>
+          <input name="gbContact" placeholder="Your internal contact" />
+        </div>
 
-      <div style="margin-top:16px">
-        <button type="submit">Submit</button>
-      </div>
-    </form>
-    <p id="status"></p>
+        <div class="field">
+          <label>Visiting Card Upload (one or more)</label>
+          <input id="visitingCard" name="visitingCard" type="file" multiple accept="image/*,application/pdf" />
+          <div class="muted">Allowed: images and PDF. Max 100 MB per file.</div>
+        </div>
+
+        <div class="field">
+          <label>Booth / Product Photos (one or more)</label>
+          <input id="boothPhotos" name="boothPhotos" type="file" multiple accept="image/*,video/*" />
+        </div>
+
+        <div class="field">
+          <label>Catalogue Upload (one or more)</label>
+          <input id="catalogue" name="catalogue" type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,image/*" />
+        </div>
+
+        <div class="field">
+          <label>Optional Message</label>
+          <textarea name="message" placeholder="Notes for follow up"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="submitBtn">Submit</button>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+
+        <div class="muted" style="margin-top:10px;text-align:center">
+          We will send a confirmation email to the address you provide.
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
-    const statusEl = document.getElementById('status');
     const form = document.getElementById('f');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
 
-    form.addEventListener('submit', async e => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      statusEl.textContent = 'Submitting';
+      statusEl.textContent = 'Submitting...';
+      submitBtn.disabled = true;
+
+      const countryCode = form.countryCode.value.trim();
+      const phoneVal = form.phone.value.trim();
+      const phoneFull = [countryCode, phoneVal].filter(Boolean).join(' ').trim();
+
+      const city = form.city.value.trim();
+      const country = form.country.value.trim();
+      const prov = form.provinceState.value.trim();
+      const airport = form.nearestAirport.value.trim();
+      const train = form.nearestTrain.value.trim();
+
+      const companyLocation = [city ? `City: ${city}` : '', prov ? `State: ${prov}` : '', country ? `Country: ${country}` : '', airport ? `Airport: ${airport}` : '', train ? `Train: ${train}` : '']
+        .filter(Boolean).join('  |  ');
+
       const fd = new FormData(form);
-      try{
-        const r = await fetch('/api/submit', { method: 'POST', body: fd });
-        if(!r.ok) throw new Error('Server error');
-        const j = await r.json();
-        statusEl.textContent = 'Thank you  reference ' + j.id;
-        form.reset();
-      }catch(err){
+      fd.set('phoneFull', phoneFull);
+      fd.set('companyLocation', companyLocation);
+
+      try {
+        const res = await fetch('/api/submit', { method: 'POST', body: fd });
+        const j = await res.json();
+
+        if (!res.ok || !j.ok) {
+          const msg = j?.error?.error?.message || j?.error?.message || 'Server error';
+          statusEl.textContent = msg;
+          submitBtn.disabled = false;
+          console.error('Submit error', j);
+          return;
+        }
+
+        const params = new URLSearchParams();
+        params.set('id', j.id);
+        params.set('folder', j.folder || '');
+        window.location.href = '/thankyou.html?' + params.toString();
+      } catch (err) {
         console.error(err);
-        statusEl.textContent = 'There was an error submitting the form';
+        statusEl.textContent = 'Server error';
+        submitBtn.disabled = false;
       }
     });
   </script>
