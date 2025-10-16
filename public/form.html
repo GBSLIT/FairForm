@@ -173,17 +173,24 @@
       <form id="f" autocomplete="on">
         <div class="field">
           <label>Fair Name</label>
-          <input name="fairName" required placeholder="e.g. Ambiente 2026" />
+          <select name="fairName">
+            <option value="">Select</option>
+            <option>Canton Fair 2025</option>
+            <option>CAC Fair 2025</option>
+            <option>Jinhan Fair 2025</option>
+            <option>HK Fair 2025</option>
+            <option>Shanghai Furniture Fair 2025</option>
+          </select>
         </div>
 
         <div class="field">
           <label>Company Name</label>
-          <input name="companyName" required placeholder="Company name" />
+          <input name="companyName" required placeholder="Company Name" />
         </div>
 
         <div class="field">
           <label>Contact Person Name</label>
-          <input name="contactPerson" required placeholder="Full name" />
+          <input name="contactPerson" required placeholder="Full Name" />
         </div>
 
         <div class="field">
@@ -202,12 +209,19 @@
 
         <div class="field">
           <label>Designation or Role</label>
-          <input name="designation" placeholder="e.g. Purchasing Manager" />
+         <select name="designation">
+            <option value="">Select</option>
+            <option>Sales Manager</option>
+            <option>Product Manager</option>
+            <option>Account Manager</option>
+            <option>Sales Coordinator</option>
+            <option>Sales Representative</option>
+          </select>
         </div>
 
         <div class="field">
-          <label>Key Product Category</label>
-          <input name="keyProductCategory" placeholder="eg. Outdoor rattan furniture" />
+          <label>Key Product Category (comma separated)</label>
+          <input name="keyProductCategory" placeholder="eg. Outdoor Furniture, Indoor Funiture, Garden Accessories, Home Decor " />
         </div>
 
         <div class="field">
@@ -224,7 +238,7 @@
 
         <div class="field">
           <label>Materials (comma separated)</label>
-          <input name="materials" placeholder="wood, rattan, metal, glass" />
+          <input name="materials" placeholder="Wood, Rattan, Metal, Glass" />
         </div>
 
         <div class="field">
@@ -236,33 +250,42 @@
 
         <div class="field">
           <label>City</label>
-          <input name="city" placeholder="eg. Jakarta" />
+          <input name="city" placeholder="eg. Guangzhou" />
         </div>
 
         <div class="field">
           <label>Country</label>
-          <input name="country" placeholder="eg. Indonesia" />
+          <input name="country" placeholder="eg. China" />
         </div>
 
         <div class="field">
           <label>Province / State</label>
-          <input name="provinceState" placeholder="eg. West Java" />
+          <input name="provinceState" placeholder="eg. Guangdong" />
         </div>
 
         <div class="field two">
           <div>
             <label>Nearest Airport</label>
-            <input name="nearestAirport" placeholder="eg. Soekarno–Hatta (CGK)" />
+            <input name="nearestAirport" placeholder="eg. Guagnzhou Baiyun" />
           </div>
           <div>
             <label>Nearest Train Station</label>
-            <input name="nearestTrain" placeholder="eg. Gambir Station" />
+            <input name="nearestTrain" placeholder="eg. Guangzhou North" />
           </div>
         </div>
 
         <div class="field">
           <label>Global Base Contact Person</label>
-          <input name="gbContact" placeholder="Your internal contact" />
+          <select name="gbContact">
+            <option value="">Select</option>
+            <option>Mr Amjad Abbas</option>
+            <option>Mr Azhar Abbas</option>
+            <option>Mr Ted</option>
+            <option>Mr Clark</option>
+            <option>Mr Oscar</option>
+            <option>Mr Jack</option> 
+            <option>Mr Zhong</option> 
+          </select>
         </div>
 
         <div class="field">
@@ -282,7 +305,7 @@
         </div>
 
         <div class="field">
-          <label>Optional Message</label>
+          <label>Message (Optional)</label>
           <textarea name="message" placeholder="Notes for follow up"></textarea>
         </div>
 
@@ -349,6 +372,7 @@ window.location.href = '/thankyou.html?' + params.toString();
   </script>
 </body>
 </html>
+
 
 
 
