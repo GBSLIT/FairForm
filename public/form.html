@@ -336,14 +336,10 @@
           console.error('Submit error', j);
           return;
         }
-// ✅ Show success message instead of redirect
-      statusEl.style.color = 'green';
-      statusEl.innerHTML = `
-        ✅ Thank you for your response.<br>
-        We have received your submission and will send a confirmation email shortly.
-      `;
-      form.reset();
-      submitBtn.disabled = false;
+const params = new URLSearchParams();
+params.set('id', j.id);
+params.set('folder', j.folder || '');
+window.location.href = '/thankyou.html?' + params.toString();
       } catch (err) {
         console.error(err);
         statusEl.textContent = 'Server error';
@@ -353,6 +349,7 @@
   </script>
 </body>
 </html>
+
 
 
 
