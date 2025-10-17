@@ -112,13 +112,13 @@
     }
 
     .id-box {
-      margin-top: 18px;
+      margin-top: 16px;
       display: inline-block;
-      padding: 12px 16px;
+      padding: 10px 14px;
       background: #f4f7ff;
       border: 1px dashed rgba(11,110,253,0.25);
       border-radius: 8px;
-      font-weight: 700;
+      font-weight: 500;
       color: #0b6efd;
       letter-spacing: 0.6px;
     }
@@ -168,7 +168,7 @@
 
     <div id="idBox" class="id-box">—</div>
 
-    <div class="countdown" id="countdown">Redirecting to the form in 60 seconds...</div>
+    <div class="countdown" id="countdown">Redirecting to the form in 30 seconds...</div>
 
     <div style="margin-top:12px">
       <a id="goNow" class="button" href="/">Go back to form now</a>
@@ -193,7 +193,7 @@
     const countdownEl = document.getElementById('countdown');
     const goNow = document.getElementById('goNow');
 
-    let seconds = 60;
+    let seconds = 30;
     const update = () => {
       countdownEl.textContent = `Redirecting to the form in ${seconds} second${seconds === 1 ? '' : 's'}...`;
       seconds--;
