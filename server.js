@@ -143,8 +143,8 @@ app.post('/api/submit', fields, async (req, res) => {
     const readableId = 'FORM_' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + uuidv4().slice(0, 6).toUpperCase();
 
     // Create folder
-    const folder = await createResponseFolder(tk, readableId, req.body.CompanyName);
-    console.log('Folder created', { id: folder?.id, webUrl: folder?.webUrl });
+   const folder = await createResponseFolder(tk, readableId, req.body.companyName);
+   console.log('Folder created', { id: folder?.id, webUrl: folder?.webUrl });
 
     // Upload all file groups
     const vcCount = await uploadGroup(tk, folder.id, req.files['visitingCard'] || []);
@@ -197,4 +197,5 @@ app.post('/api/submit', fields, async (req, res) => {
 // Start server
 const LISTEN_PORT = process.env.PORT || 8080;
 app.listen(LISTEN_PORT, () => console.log(`Server running on ${LISTEN_PORT}`));
+
 
