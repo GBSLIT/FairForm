@@ -172,8 +172,8 @@
 
       <form id="f" autocomplete="on">
         <div class="field">
-          <label>Fair Name</label>
-          <select name="fairName">
+          <label>Fair Name*</label>
+          <select name="fairName" required>
             <option value="">Select</option>
             <option>Canton Fair 2025</option>
             <option>CAC Fair 2025</option>
@@ -184,32 +184,32 @@
         </div>
 
         <div class="field">
-          <label>Company Name</label>
+          <label>Company Name*</label>
           <input name="companyName" required placeholder="Company Name" />
         </div>
 
         <div class="field">
-          <label>Contact Person Name</label>
+          <label>Contact Person Name*</label>
           <input name="contactPerson" required placeholder="Full Name" />
         </div>
 
         <div class="field">
-          <label>Contact Email</label>
+          <label>Contact Email*</label>
           <input name="contactEmail" type="email" required placeholder="name@company.com" />
         </div>
 
         <div class="field">
-          <label>Phone Number (include country code)</label>
+          <label>Phone Number (include country code)*</label>
           <div class="phone-row">
-            <input name="countryCode" placeholder="+852" />
-            <input name="phone" type="tel" placeholder="Phone number without leading zero" />
+            <input name="countryCode" required placeholder="+852" />
+            <input name="phone" type="tel" required placeholder="Phone number without leading zero" />
           </div>
           <div class="muted">Enter country code and local number. We'll store it as one combined value.</div>
         </div>
 
         <div class="field">
-          <label>Designation or Role</label>
-         <select name="designation">
+          <label>Designation or Role*</label>
+         <select name="designation" required>
             <option value="">Select</option>
             <option>Sales Manager</option>
             <option>Product Manager</option>
@@ -220,13 +220,13 @@
         </div>
 
         <div class="field">
-          <label>Key Product Category (comma separated)</label>
-          <input name="keyProductCategory" placeholder="eg. Outdoor Furniture, Indoor Funiture, Garden Accessories, Home Decor " />
+          <label>Key Product Category (comma separated)*</label>
+          <input name="keyProductCategory" required placeholder="eg. Outdoor Furniture, Indoor Funiture, Garden Accessories, Home Decor " />
         </div>
 
         <div class="field">
-          <label>Company Type</label>
-          <select name="companyType">
+          <label>Company Type*</label>
+          <select name="companyType" required>
             <option value="">Select</option>
             <option>Manufacturer</option>
             <option>Trading</option>
@@ -237,46 +237,46 @@
         </div>
 
         <div class="field">
-          <label>Materials (comma separated)</label>
-          <input name="materials" placeholder="Wood, Rattan, Metal, Glass" />
+          <label>Materials (comma separated)*</label>
+          <input name="materials" required placeholder="Wood, Rattan, Metal, Glass" />
         </div>
 
         <div class="field">
-          <label>Full Address</label>
-          <textarea name="fullAddress" placeholder="Street, City, Country"></textarea>
+          <label>Full Address*</label>
+          <textarea name="fullAddress" required placeholder="Street, City, Country"></textarea>
         </div>
 
         <hr style="border:none;border-top:1px solid rgba(0,0,0,0.06);margin:10px 0">
 
         <div class="field">
-          <label>City</label>
-          <input name="city" placeholder="eg. Guangzhou" />
+          <label>City*</label>
+          <input name="city" required placeholder="eg. Guangzhou" />
         </div>
 
         <div class="field">
           <label>Country</label>
-          <input name="country" placeholder="eg. China" />
+          <input name="country" required placeholder="eg. China" />
         </div>
 
         <div class="field">
-          <label>Province / State</label>
-          <input name="provinceState" placeholder="eg. Guangdong" />
+          <label>Province / State*</label>
+          <input name="provinceState" required placeholder="eg. Guangdong" />
         </div>
 
         <div class="field two">
           <div>
-            <label>Nearest Airport</label>
-            <input name="nearestAirport" placeholder="eg. Guagnzhou Baiyun" />
+            <label>Nearest Airport*</label>
+            <input name="nearestAirport" required placeholder="eg. Guagnzhou Baiyun" />
           </div>
           <div>
-            <label>Nearest Train Station</label>
-            <input name="nearestTrain" placeholder="eg. Guangzhou North" />
+            <label>Nearest Train Station*</label>
+            <input name="nearestTrain" required placeholder="eg. Guangzhou North" />
           </div>
         </div>
 
         <div class="field">
-          <label>Global Base Contact Person</label>
-          <select name="gbContact">
+          <label>Global Base Contact Person*</label>
+          <select name="gbContact" required>
             <option value="">Select</option>
             <option>Mr Amjad Abbas</option>
             <option>Mr Azhar Abbas</option>
@@ -289,14 +289,14 @@
         </div>
 
         <div class="field">
-          <label>Visiting Card Upload (one or more)</label>
-          <input id="visitingCard" name="visitingCard" type="file" multiple accept="image/*,application/pdf" />
+          <label>Visiting Card Upload (one or more)*</label>
+          <input id="visitingCard" name="visitingCard" type="file" multiple required accept="image/*,application/pdf" />
           <div class="muted">Allowed: images and PDF. Max 100 MB per file.</div>
         </div>
 
         <div class="field">
-          <label>Booth / Product Photos (one or more)</label>
-          <input id="boothPhotos" name="boothPhotos" type="file" multiple accept="image/*,video/*" />
+          <label>Booth / Product Photos (one or more)*</label>
+          <input id="boothPhotos" name="boothPhotos" type="file" multiple required accept="image/*,video/*" />
         </div>
 
         <div class="field">
@@ -372,6 +372,7 @@ window.location.href = '/thankyou.html?' + params.toString();
   </script>
 </body>
 </html>
+
 
 
 
