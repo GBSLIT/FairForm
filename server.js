@@ -1,4 +1,4 @@
-// server.js (final - dynamic column mapping + MailCondition formula apply + GlobalBaseContactEmail)
+// server.js (final - dynamic column mapping + GlobalBaseContactEmail + direct MailCondition value)
 import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
@@ -99,7 +99,7 @@ async function uploadGroup(token, folderId, files) {
   return count;
 }
 
-// === NEW: GlobalBaseContact -> Email resolver ===
+// === GlobalBaseContact -> Email resolver ===
 function normalizeName(s = '') {
   return s
     .toLowerCase()
@@ -155,13 +155,15 @@ async function appendRow(token, record) {
     NearestAirport: 'NearestAirport',
     NearestTrain: 'NearestTrain',
     GlobalBaseContact: 'GlobalBaseContact',
-    GlobalBaseContactEmail: 'GlobalBaseContactEmail',   // 👈 NEW mapping
+    GlobalBaseContactEmail: 'GlobalBaseContactEmail',
     VisitingCardCount: 'VisitingCardCount',
     BoothPhotoCount: 'BoothPhotoCount',
     CatalogueCount: 'CatalogueCount',
     Message: 'Message',
     FolderLink: 'FolderLink',
-    Timestamp: 'Timestamp'
+    Timestamp: 'Timestamp',
+    'Status Mail': 'StatusMail',       // map header with space -> internal key
+    MailCondition: 'MailCondition'     // direct value we compute
     // Any extra right-side manual columns not listed here will be set to "".
   };
 
@@ -176,41 +178,6 @@ async function appendRow(token, record) {
   // 4) Add the row
   const addUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/rows/add`;
   await graphPost(addUrl, token, { values: [rowValues] });
-}
-
-// 🧮 Apply MailCondition formula to the whole column (ensures new row gets it)
-async function applyMailConditionFormula(token) {
-  const tablePath = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}`;
-
-  // Find the "MailCondition" column
-  const cols = await graphGet(`${tablePath}/columns`, token);
-  const col = (cols.data?.value || []).find(c => (c.name || '').trim() === 'MailCondition');
-  if (!col) {
-    console.warn('MailCondition column not found in table; skipping formula apply.');
-    return;
-  }
-
-  // Get data body range for that column
-  const rangeResp = await graphGet(`${tablePath}/columns/${encodeURIComponent(col.id)}/dataBodyRange`, token);
-  const address = rangeResp.data?.address;           // e.g. "Sheet1!Y2:Y9999"
-  const rowCount = rangeResp.data?.rowCount || 0;    // number of data rows in the table
-  if (!address || !rowCount) {
-    console.warn('MailCondition dataBodyRange not found or empty; skipping.');
-    return;
-  }
-
-  // Build formulas matrix to match the column range size (rowCount x 1)
-  const formula = '=IF([@ID]="","",IF([@[Status Mail]]="","Yes","No"))';
-  const matrix = Array.from({ length: rowCount }, () => [formula]);
-
-  // PATCH formulas to the column range
-  const sheetName = address.split('!')[0].replace(/'/g, '');
-  const encodedSheet = encodeURIComponent(sheetName);
-  await axios.patch(
-    `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/worksheets/${encodedSheet}/range(address='${encodeURIComponent(address)}')`,
-    { formulas: matrix },
-    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-  );
 }
 
 // Multer file fields
@@ -237,6 +204,13 @@ app.post('/api/submit', fields, async (req, res) => {
     const bpCount = await uploadGroup(tk, folder.id, req.files['boothPhotos'] || []);
     const ctCount = await uploadGroup(tk, folder.id, req.files['catalogue'] || []);
 
+    // Compute StatusMail (usually empty on insert; included so your table has the column)
+    const statusMail = ''; // keep blank initially; your workflow can update it later
+
+    // Compute MailCondition directly (mimics your Excel formula)
+    // =IF([@ID]="","",IF([@[Status Mail]]="","Yes","No"))
+    const mailCondition = readableId ? (statusMail ? 'No' : 'Yes') : '';
+
     // Build full record object for Excel
     const record = {
       ID: readableId,
@@ -257,24 +231,21 @@ app.post('/api/submit', fields, async (req, res) => {
       NearestAirport: req.body.nearestAirport || '',
       NearestTrain: req.body.nearestTrain || '',
       GlobalBaseContact: req.body.gbContact || '',
-      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),  // 👈 NEW computed email
+      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),  // computed email
       VisitingCardCount: vcCount,
       BoothPhotoCount: bpCount,
       CatalogueCount: ctCount,
       Message: req.body.message || '',
       FolderLink: folder.webUrl,
-      Timestamp: new Date().toISOString()
+      Timestamp: new Date().toISOString(),
+      StatusMail: statusMail,            // mapped to header "Status Mail"
+      MailCondition: mailCondition       // mapped to header "MailCondition"
     };
 
     // Add the row
     await appendRow(tk, record);
 
-    // Ensure MailCondition formula is applied to the column (covers the new row too)
-    try {
-      await applyMailConditionFormula(tk);
-    } catch (e) {
-      console.warn('applyMailConditionFormula error', e?.response?.data || e.message || e);
-    }
+    // We no longer patch formulas; value is already set in the row.
 
     res.json({
       ok: true,
