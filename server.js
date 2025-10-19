@@ -1,4 +1,4 @@
-// server.js (final - dynamic column mapping + GlobalBaseContactEmail + direct MailCondition value)
+// server.js (final - dynamic column mapping + GlobalBaseContactEmail + MailCondition formula per last row)
 import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
@@ -162,8 +162,8 @@ async function appendRow(token, record) {
     Message: 'Message',
     FolderLink: 'FolderLink',
     Timestamp: 'Timestamp',
-    'Status Mail': 'StatusMail',       // map header with space -> internal key
-    MailCondition: 'MailCondition'     // direct value we compute
+    'Status Mail': 'StatusMail',   // header with space -> internal key
+    MailCondition: 'MailCondition' // we will place the formula after insert
     // Any extra right-side manual columns not listed here will be set to "".
   };
 
@@ -178,6 +178,77 @@ async function appendRow(token, record) {
   // 4) Add the row
   const addUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/rows/add`;
   await graphPost(addUrl, token, { values: [rowValues] });
+}
+
+// 🧮 Apply the MailCondition formula ONLY to the last inserted row's MailCondition cell
+async function applyMailConditionFormulaToLastRow(token) {
+  const tableBase = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}`;
+
+  // a) Find the MailCondition column index
+  const colsResp = await graphGet(`${tableBase}/columns`, token);
+  const cols = colsResp.data?.value || [];
+  const idxMail = cols.findIndex(c => (c.name || '').trim() === 'MailCondition');
+  if (idxMail < 0) { console.warn('MailCondition column not found; skipping.'); return; }
+
+  // b) Get the table data body range (all data rows)
+  const bodyResp = await graphGet(`${tableBase}/dataBodyRange`, token);
+  const fullAddr = bodyResp.data?.address;        // e.g. "Sheet1!C2:Z105"
+  const rowCount = bodyResp.data?.rowCount || 0;  // number of data rows
+  const colCount = bodyResp.data?.columnCount || 0;
+  if (!fullAddr || !rowCount || !colCount) {
+    console.warn('Table dataBodyRange not found or empty; skipping.');
+    return;
+  }
+
+  // c) Parse sheet + A1-range
+  const [sheetRaw, rangeA1] = fullAddr.split('!');
+  const sheetName = (sheetRaw || '').replace(/^'+|'+$/g, '');
+  const wsSeg = encodeURIComponent(sheetName);
+
+  // d) Extract start cell info (e.g., "C2:Z105" -> start "C2")
+  const [startCell/*, endCell*/] = rangeA1.split(':');
+  const startColLetters = startCell.match(/[A-Z]+/i)?.[0] || 'A';
+  const startRowNumber = parseInt(startCell.match(/\d+/)?.[0] || '2', 10);
+
+  // e) Convert Excel column letters <-> number
+  const colLettersToNumber = (letters) =>
+    letters.toUpperCase().split('').reduce((sum, ch) => sum * 26 + (ch.charCodeAt(0) - 64), 0);
+  const colNumberToLetters = (n) => {
+    let s = '';
+    while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  };
+
+  const startColIndex = colLettersToNumber(startColLetters); // e.g., C -> 3
+
+  // f) Target column index = startColIndex + idxMail
+  const targetColIndex = startColIndex + idxMail;
+  const targetColLetters = colNumberToLetters(targetColIndex);
+
+  // g) Target row is LAST data row = startRowNumber + rowCount - 1
+  const targetRow = startRowNumber + rowCount - 1;
+
+  // h) Single-cell address (without sheet), e.g., "Y105"
+  const targetCell = `${targetColLetters}${targetRow}`;
+
+  // i) PATCH the formula into that single cell
+  const formula = '=IF([@ID]="","",IF([@[Status Mail]]="","Yes","No"))';
+  const url = `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/worksheets/${wsSeg}/range(address='${encodeURIComponent(targetCell)}')`;
+
+  try {
+    await axios.patch(
+      url,
+      { formulas: [[formula]] },  // comma-locale
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+  } catch (err) {
+    // Retry with formulasLocal (semicolon-locale)
+    await axios.patch(
+      url,
+      { formulasLocal: [[formula]] },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 // Multer file fields
@@ -204,14 +275,8 @@ app.post('/api/submit', fields, async (req, res) => {
     const bpCount = await uploadGroup(tk, folder.id, req.files['boothPhotos'] || []);
     const ctCount = await uploadGroup(tk, folder.id, req.files['catalogue'] || []);
 
-    // Compute StatusMail (usually empty on insert; included so your table has the column)
-    const statusMail = ''; // keep blank initially; your workflow can update it later
-
-    // Compute MailCondition directly (mimics your Excel formula)
-    // =IF([@ID]="","",IF([@[Status Mail]]="","Yes","No"))
-    const mailCondition = readableId ? (statusMail ? 'No' : 'Yes') : '';
-
     // Build full record object for Excel
+    // NOTE: MailCondition stays blank here; we will set the FORMULA after insert.
     const record = {
       ID: readableId,
       FairName: req.body.fairName || '',
@@ -231,21 +296,26 @@ app.post('/api/submit', fields, async (req, res) => {
       NearestAirport: req.body.nearestAirport || '',
       NearestTrain: req.body.nearestTrain || '',
       GlobalBaseContact: req.body.gbContact || '',
-      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),  // computed email
+      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),
       VisitingCardCount: vcCount,
       BoothPhotoCount: bpCount,
       CatalogueCount: ctCount,
       Message: req.body.message || '',
       FolderLink: folder.webUrl,
       Timestamp: new Date().toISOString(),
-      StatusMail: statusMail,            // mapped to header "Status Mail"
-      MailCondition: mailCondition       // mapped to header "MailCondition"
+      StatusMail: '',      // keep blank initially
+      MailCondition: ''    // leave blank; add formula to last row below
     };
 
     // Add the row
     await appendRow(tk, record);
 
-    // We no longer patch formulas; value is already set in the row.
+    // Put the MailCondition FORMULA into the last inserted row cell
+    try {
+      await applyMailConditionFormulaToLastRow(tk);
+    } catch (e) {
+      console.warn('applyMailConditionFormulaToLastRow error', e?.response?.data || e.message || e);
+    }
 
     res.json({
       ok: true,
