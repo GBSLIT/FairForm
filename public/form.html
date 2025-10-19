@@ -168,7 +168,7 @@
 
   <div class="wrap">
     <div class="card" role="form" aria-labelledby="formTitle">
-      <h1 id="formTitle">Exhibition Booth Visit Data Collection</h1>
+      <h1 id="formTitle">Vendor Registration Form</h1>
 
       <form id="f" autocomplete="on">
         <div class="field">
@@ -180,6 +180,7 @@
             <option>Jinhan Fair 2025</option>
             <option>HK Fair 2025</option>
             <option>Shanghai Furniture Fair 2025</option>
+            <option>Ambiente Fair 2026</option>
           </select>
         </div>
 
@@ -201,7 +202,7 @@
         <div class="field">
           <label>Phone Number (include country code)*</label>
           <div class="phone-row">
-            <input name="countryCode" required placeholder="+852" />
+            <input name="countryCode" required placeholder="+86" />
             <input name="phone" type="tel" required placeholder="Phone number without leading zero" />
           </div>
           <div class="muted">Enter country code and local number. We'll store it as one combined value.</div>
@@ -216,6 +217,7 @@
             <option>Account Manager</option>
             <option>Sales Coordinator</option>
             <option>Sales Representative</option>
+           <option>Owner / President</option>
           </select>
         </div>
 
@@ -232,12 +234,13 @@
             <option>Trading</option>
             <option>Designer</option>
             <option>Wholesaler</option>
-            <option>Other</option>
+            <option>Freight Forwarder</option>
+            <option>Service Provider</option>
           </select>
         </div>
 
         <div class="field">
-          <label>Materials (comma separated)*</label>
+          <label>List of all Material Produced in your Factory (comma separated)*</label>
           <input name="materials" required placeholder="Wood, Rattan, Metal, Glass" />
         </div>
 
@@ -306,7 +309,7 @@
 
         <div class="field">
           <label>Message (Optional)</label>
-          <textarea name="message" placeholder="Notes for follow up"></textarea>
+          <textarea name="message" placeholder=" Notes for follow up "></textarea>
         </div>
 
         <div class="actions">
@@ -372,6 +375,7 @@ window.location.href = '/thankyou.html?' + params.toString();
   </script>
 </body>
 </html>
+
 
 
 
