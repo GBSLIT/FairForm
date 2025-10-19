@@ -1,4 +1,4 @@
-// server.js (final - dynamic column mapping + MailCondition formula apply)
+// server.js (final - dynamic column mapping + MailCondition formula apply + GlobalBaseContactEmail)
 import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
@@ -99,6 +99,30 @@ async function uploadGroup(token, folderId, files) {
   return count;
 }
 
+// === NEW: GlobalBaseContact -> Email resolver ===
+function normalizeName(s = '') {
+  return s
+    .toLowerCase()
+    .replace(/\./g, '')        // remove dots
+    .replace(/^\s*mr\s+/,'')   // drop leading "mr "
+    .trim();
+}
+function getGbEmail(displayName = '') {
+  const n = normalizeName(displayName);
+  const map = {
+    'amjad abbas': 'amjad@globalbasesourcing.com',
+    'azhar abbas': 'azhar@globalbasesourcing.com',
+    'ted':         'ted@globalbasesourcing.com',
+    'clark':       'purchase5@globalbasesourcing.com',
+    'oscar':       'purchase1@globalbasesourcing.com',
+    'jack':        'purchase2@globalbasesourcing.com',
+    'zhong':       'purchase4@globalbasesourcing.com'
+  };
+  if (map[n]) return map[n];
+  const first = n.split(/\s+/)[0];
+  return map[first] || '';
+}
+
 // 🔁 Append row with dynamic column mapping (adapts to added right-side columns)
 async function appendRow(token, record) {
   // 1) Read table columns (names + order)
@@ -131,6 +155,7 @@ async function appendRow(token, record) {
     NearestAirport: 'NearestAirport',
     NearestTrain: 'NearestTrain',
     GlobalBaseContact: 'GlobalBaseContact',
+    GlobalBaseContactEmail: 'GlobalBaseContactEmail',   // 👈 NEW mapping
     VisitingCardCount: 'VisitingCardCount',
     BoothPhotoCount: 'BoothPhotoCount',
     CatalogueCount: 'CatalogueCount',
@@ -232,6 +257,7 @@ app.post('/api/submit', fields, async (req, res) => {
       NearestAirport: req.body.nearestAirport || '',
       NearestTrain: req.body.nearestTrain || '',
       GlobalBaseContact: req.body.gbContact || '',
+      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),  // 👈 NEW computed email
       VisitingCardCount: vcCount,
       BoothPhotoCount: bpCount,
       CatalogueCount: ctCount,
