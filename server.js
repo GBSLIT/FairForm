@@ -1,4 +1,4 @@
-// server.js (final - aligned with 23-column Excel table)
+// server.js (final - dynamic column mapping; no other changes)
 import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
@@ -68,6 +68,13 @@ async function graphPutBinary(url, token, buffer, contentType) {
   });
 }
 
+// ▶️ ADD: graphGet helper
+async function graphGet(url, token) {
+  return axios.get(`https://graph.microsoft.com/v1.0${url}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
 // Create a unique folder for each submission
 async function createResponseFolder(token, readableId, fairName = '') {
   const safeFair = (fairName || '').trim().replace(/[^\w. ]/g, '_').slice(0, 60);
@@ -92,39 +99,58 @@ async function uploadGroup(token, folderId, files) {
   return count;
 }
 
-// Append a row to the Excel table
-async function appendRow(token, row) {
-  const url = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/rows/add`;
+// 🔁 Replace appendRow with dynamic column mapping (adapts to added right-side columns)
+async function appendRow(token, record) {
+  // 1) Read table columns (names + order)
+  const colsUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/columns`;
+  const colsResp = await graphGet(colsUrl, token);
+  const columns = colsResp.data?.value || [];
+  const colNames = columns.map(c => c.name);
 
-  // 👇 EXACTLY 23 columns in order (same as Excel)
-  const values = [[
-    row.ID,                // 1 ID
-    row.FairName,          // 2
-    row.CompanyName,       // 3
-    row.ContactPerson,     // 4
-    row.ContactEmail,      // 5
-    row.MobileNumber,      // 6
-    row.Designation,       // 7
-    row.KeyProductCategory,// 8
-    row.CompanyType,       // 9
-    row.Materials,         // 10
-    row.FullAddress,       // 11
-    row.CompanyLocation,   // 12
-    row.City,              // 13
-    row.Country,           // 14
-    row.ProvinceState,     // 15
-    row.NearestAirport,    // 16
-    row.NearestTrain,      // 17
-    row.GlobalBaseContact, // 18
-    row.VisitingCardCount, // 19
-    row.BoothPhotoCount,   // 20
-    row.CatalogueCount,    // 21
-    row.Message,           // 22
-    row.FolderLink,        // 23
-    row.Timestamp          // 24 ← optional, if Excel has 24 columns, else remove
-  ]];
+  if (!colNames.length) {
+    throw new Error('Could not read table columns; check TABLE_NAME and workbook access.');
+  }
 
-  await graphPost(url, token, { values });
+  // 2) Map Excel header -> record key
+  const headerToRecordKey = {
+    ID: 'ID',
+    FairName: 'FairName',
+    CompanyName: 'CompanyName',
+    ContactPerson: 'ContactPerson',
+    ContactEmail: 'ContactEmail',
+    MobileNumber: 'MobileNumber',
+    Designation: 'Designation',
+    KeyProductCategory: 'KeyProductCategory',
+    CompanyType: 'CompanyType',
+    Materials: 'Materials',
+    FullAddress: 'FullAddress',
+    CompanyLocation: 'CompanyLocation',
+    City: 'City',
+    Country: 'Country',
+    ProvinceState: 'ProvinceState',
+    NearestAirport: 'NearestAirport',
+    NearestTrain: 'NearestTrain',
+    GlobalBaseContact: 'GlobalBaseContact',
+    VisitingCardCount: 'VisitingCardCount',
+    BoothPhotoCount: 'BoothPhotoCount',
+    CatalogueCount: 'CatalogueCount',
+    Message: 'Message',
+    FolderLink: 'FolderLink',
+    Timestamp: 'Timestamp'
+    // Any extra right-side manual columns not listed here will be filled with "".
+  };
+
+  // 3) Build row array matching the table's current size & order
+  const rowValues = colNames.map(h => {
+    const key = headerToRecordKey[h];
+    const val = key ? record[key] : '';
+    if (val === undefined || val === null) return '';
+    return Array.isArray(val) ? val.join(', ') : String(val);
+  });
+
+  // 4) Add the row
+  const addUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/rows/add`;
+  await graphPost(addUrl, token, { values: [rowValues] });
 }
 
 // Multer file fields
@@ -142,9 +168,9 @@ app.post('/api/submit', fields, async (req, res) => {
     const tk = await getToken();
     const readableId = 'FORM_' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + uuidv4().slice(0, 6).toUpperCase();
 
-    // Create folder
-   const folder = await createResponseFolder(tk, readableId, req.body.companyName);
-   console.log('Folder created', { id: folder?.id, webUrl: folder?.webUrl });
+    // Create folder (uses company name as requested earlier)
+    const folder = await createResponseFolder(tk, readableId, req.body.companyName);
+    console.log('Folder created', { id: folder?.id, webUrl: folder?.webUrl });
 
     // Upload all file groups
     const vcCount = await uploadGroup(tk, folder.id, req.files['visitingCard'] || []);
@@ -197,5 +223,3 @@ app.post('/api/submit', fields, async (req, res) => {
 // Start server
 const LISTEN_PORT = process.env.PORT || 8080;
 app.listen(LISTEN_PORT, () => console.log(`Server running on ${LISTEN_PORT}`));
-
-
