@@ -238,7 +238,19 @@
             <option>Service Provider</option>
           </select>
         </div>
-
+        <div class="field">
+  <label>Year of Establishment</label>
+  <input
+    name="yearEstablished"
+    type="number"
+    inputmode="numeric"
+    min="1800"
+    max="2100"
+    step="1"
+    required
+    placeholder="e.g. 2005"
+  />
+</div>
         <div class="field">
           <label>List of all Material Produced in your Factory (comma separated)*</label>
           <input name="materials" required placeholder="Wood, Rattan, Metal, Glass" />
@@ -375,6 +387,7 @@ window.location.href = '/thankyou.html?' + params.toString();
   </script>
 </body>
 </html>
+
 
 
 
