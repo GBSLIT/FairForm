@@ -12,23 +12,19 @@ dotenv.config();
 const app = express();
 const upload = multer({ limits: { fileSize: 100 * 1024 * 1024 } }); // 100 MB
 
-// Serve public files
 app.use(express.static('./public'));
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'form.html')));
 app.get('/health', (req, res) => res.send('ok'));
 
-// Required environment variables
 const {
   TENANT_ID, CLIENT_ID, CLIENT_SECRET,
   DRIVE_ID, EXCEL_ITEM_ID, PARENT_FOLDER_ID = 'root', TABLE_NAME = 'BoothResponses', PORT = 8080
 } = process.env;
 
-// Mask helper for logs
 const mask = s => s ? `${s.slice(0, 4)}...${s.slice(-4)}` : 'MISSING';
 
-// Log environment summary
 console.log('--- STARTUP ENV CHECK ---');
 console.log('TENANT_ID', mask(TENANT_ID));
 console.log('CLIENT_ID', mask(CLIENT_ID));
@@ -40,11 +36,6 @@ console.log('TABLE_NAME', TABLE_NAME);
 console.log('PORT', PORT);
 console.log('-------------------------');
 
-if (!TENANT_ID || !CLIENT_ID || !CLIENT_SECRET || !DRIVE_ID || !EXCEL_ITEM_ID) {
-  console.error('One or more critical environment variables are missing.');
-}
-
-// MSAL Auth
 const msal = new ConfidentialClientApplication({
   auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, clientSecret: CLIENT_SECRET }
 });
@@ -55,27 +46,22 @@ async function getToken() {
   return result.accessToken;
 }
 
-// Graph helpers
 async function graphPost(url, token, data) {
   return axios.post(`https://graph.microsoft.com/v1.0${url}`, data, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   });
 }
-
 async function graphPutBinary(url, token, buffer, contentType) {
   return axios.put(`https://graph.microsoft.com/v1.0${url}`, buffer, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': contentType || 'application/octet-stream' }
   });
 }
-
-// ➕ get helper
 async function graphGet(url, token) {
   return axios.get(`https://graph.microsoft.com/v1.0${url}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
 
-// Create a unique folder for each submission
 async function createResponseFolder(token, readableId, fairOrCompany = '') {
   const safeTail = (fairOrCompany || '').trim().replace(/[^\w. ]/g, '_').slice(0, 60);
   const folderName = `${readableId}${safeTail ? '_' + safeTail : ''}`;
@@ -87,7 +73,6 @@ async function createResponseFolder(token, readableId, fairOrCompany = '') {
   return resp.data;
 }
 
-// Upload all files for each section
 async function uploadGroup(token, folderId, files) {
   let count = 0;
   for (const f of files) {
@@ -99,75 +84,43 @@ async function uploadGroup(token, folderId, files) {
   return count;
 }
 
-// === GlobalBaseContact -> Email resolver ===
 function normalizeName(s = '') {
-  return s
-    .toLowerCase()
-    .replace(/\./g, '')        // remove dots
-    .replace(/^\s*mr\s+/,'')   // drop leading "mr "
-    .trim();
+  return s.toLowerCase().replace(/\./g, '').replace(/^\s*mr\s+/,'').trim();
 }
-function getGbEmail(displayName = '') {
-  const n = normalizeName(displayName);
-  const map = {
-    'amjad abbas': 'amjad@globalbasesourcing.com',
-    'azhar abbas': 'azhar@globalbasesourcing.com',
-    'ted':         'ted@globalbasesourcing.com',
-    'clark':       'purchase5@globalbasesourcing.com',
-    'oscar':       'purchase1@globalbasesourcing.com',
-    'jack':        'purchase2@globalbasesourcing.com',
-    'zhong':       'purchase4@globalbasesourcing.com'
+function getGbEmail(name = '') {
+  const n = normalizeName(name);
+  const m = {
+    'amjad abbas':'amjad@globalbasesourcing.com','azhar abbas':'azhar@globalbasesourcing.com',
+    'ted':'ted@globalbasesourcing.com','clark':'purchase5@globalbasesourcing.com',
+    'oscar':'purchase1@globalbasesourcing.com','jack':'purchase2@globalbasesourcing.com',
+    'zhong':'purchase4@globalbasesourcing.com'
   };
-  if (map[n]) return map[n];
-  const first = n.split(/\s+/)[0];
-  return map[first] || '';
+  if (m[n]) return m[n];
+  const f = n.split(/\s+/)[0];
+  return m[f] || '';
 }
 
-// 🔁 Append row with dynamic column mapping (adapts to added right-side columns)
 async function appendRow(token, record) {
-  // 1) Read table columns (names + order)
   const colsUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/columns`;
   const colsResp = await graphGet(colsUrl, token);
   const columns = colsResp.data?.value || [];
   const colNames = columns.map(c => c.name);
+  if (!colNames.length) throw new Error('Could not read table columns');
 
-  if (!colNames.length) {
-    throw new Error('Could not read table columns; check TABLE_NAME and workbook access.');
-  }
-
-  // 2) Map Excel header -> record key (known columns)
   const headerToRecordKey = {
-    ID: 'ID',
-    FairName: 'FairName',
-    CompanyName: 'CompanyName',
-    ContactPerson: 'ContactPerson',
-    ContactEmail: 'ContactEmail',
-    MobileNumber: 'MobileNumber',
-    Designation: 'Designation',
-    KeyProductCategory: 'KeyProductCategory',
-    CompanyType: 'CompanyType',
-    Materials: 'Materials',
-    FullAddress: 'FullAddress',
-    CompanyLocation: 'CompanyLocation',
-    City: 'City',
-    Country: 'Country',
-    ProvinceState: 'ProvinceState',
-    NearestAirport: 'NearestAirport',
-    NearestTrain: 'NearestTrain',
-    GlobalBaseContact: 'GlobalBaseContact',
-    GlobalBaseContactEmail: 'GlobalBaseContactEmail',
-    VisitingCardCount: 'VisitingCardCount',
-    BoothPhotoCount: 'BoothPhotoCount',
-    CatalogueCount: 'CatalogueCount',
-    Message: 'Message',
-    FolderLink: 'FolderLink',
-    Timestamp: 'Timestamp',
-    'Status Mail': 'StatusMail',       // map header with space -> internal key
-    MailCondition: 'MailCondition'     // direct value we compute
-    // Any extra right-side manual columns not listed here will be set to "".
+    ID:'ID', FairName:'FairName', CompanyName:'CompanyName', ContactPerson:'ContactPerson',
+    ContactEmail:'ContactEmail', MobileNumber:'MobileNumber', Designation:'Designation',
+    KeyProductCategory:'KeyProductCategory', CompanyType:'CompanyType',
+    YearEstablished:'YearEstablished',              // 👈 ADDED
+    Materials:'Materials', FullAddress:'FullAddress', CompanyLocation:'CompanyLocation',
+    City:'City', Country:'Country', ProvinceState:'ProvinceState',
+    NearestAirport:'NearestAirport', NearestTrain:'NearestTrain',
+    GlobalBaseContact:'GlobalBaseContact', GlobalBaseContactEmail:'GlobalBaseContactEmail',
+    VisitingCardCount:'VisitingCardCount', BoothPhotoCount:'BoothPhotoCount',
+    CatalogueCount:'CatalogueCount', Message:'Message', FolderLink:'FolderLink',
+    Timestamp:'Timestamp', 'Status Mail':'StatusMail', MailCondition:'MailCondition'
   };
 
-  // 3) Build row array matching the table's current size & order
   const rowValues = colNames.map(h => {
     const key = headerToRecordKey[h];
     const val = key ? record[key] : '';
@@ -175,43 +128,27 @@ async function appendRow(token, record) {
     return Array.isArray(val) ? val.join(', ') : String(val);
   });
 
-  // 4) Add the row
   const addUrl = `/drives/${DRIVE_ID}/items/${EXCEL_ITEM_ID}/workbook/tables/${encodeURIComponent(TABLE_NAME)}/rows/add`;
   await graphPost(addUrl, token, { values: [rowValues] });
 }
 
-// Multer file fields
 const fields = upload.fields([
-  { name: 'visitingCard', maxCount: 10 },
-  { name: 'boothPhotos', maxCount: 30 },
-  { name: 'catalogue', maxCount: 20 }
+  { name:'visitingCard',maxCount:10 },{ name:'boothPhotos',maxCount:30 },{ name:'catalogue',maxCount:20 }
 ]);
 
-// Main submission handler
 app.post('/api/submit', fields, async (req, res) => {
   try {
-    console.log('Received submit', { body: Object.keys(req.body), fileGroups: Object.keys(req.files || {}) });
-
     const tk = await getToken();
-    const readableId = 'FORM_' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + uuidv4().slice(0, 6).toUpperCase();
-
-    // Create folder (uses company name as requested earlier)
+    const readableId = 'FORM_' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '_' + uuidv4().slice(0,6).toUpperCase();
     const folder = await createResponseFolder(tk, readableId, req.body.companyName);
-    console.log('Folder created', { id: folder?.id, webUrl: folder?.webUrl });
 
-    // Upload all file groups
-    const vcCount = await uploadGroup(tk, folder.id, req.files['visitingCard'] || []);
-    const bpCount = await uploadGroup(tk, folder.id, req.files['boothPhotos'] || []);
-    const ctCount = await uploadGroup(tk, folder.id, req.files['catalogue'] || []);
+    const vcCount = await uploadGroup(tk, folder.id, req.files['visitingCard']||[]);
+    const bpCount = await uploadGroup(tk, folder.id, req.files['boothPhotos']||[]);
+    const ctCount = await uploadGroup(tk, folder.id, req.files['catalogue']||[]);
 
-    // Compute StatusMail (usually empty on insert; included so your table has the column)
-    const statusMail = ''; // keep blank initially; your workflow can update it later
+    const statusMail = '';
+    const mailCondition = readableId ? (statusMail ? 'No':'Yes') : '';
 
-    // Compute MailCondition directly (mimics your Excel formula)
-    // =IF([@ID]="","",IF([@[Status Mail]]="","Yes","No"))
-    const mailCondition = readableId ? (statusMail ? 'No' : 'Yes') : '';
-
-    // Build full record object for Excel
     const record = {
       ID: readableId,
       FairName: req.body.fairName || '',
@@ -222,6 +159,7 @@ app.post('/api/submit', fields, async (req, res) => {
       Designation: req.body.designation || '',
       KeyProductCategory: req.body.keyProductCategory || '',
       CompanyType: req.body.companyType || '',
+      YearEstablished: (req.body.yearEstablished || '').toString().trim(),   // 👈 ADDED
       Materials: req.body.materials || '',
       FullAddress: req.body.fullAddress || '',
       CompanyLocation: req.body.companyLocation || '',
@@ -231,35 +169,26 @@ app.post('/api/submit', fields, async (req, res) => {
       NearestAirport: req.body.nearestAirport || '',
       NearestTrain: req.body.nearestTrain || '',
       GlobalBaseContact: req.body.gbContact || '',
-      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),  // computed email
+      GlobalBaseContactEmail: getGbEmail(req.body.gbContact || ''),
       VisitingCardCount: vcCount,
       BoothPhotoCount: bpCount,
       CatalogueCount: ctCount,
       Message: req.body.message || '',
       FolderLink: folder.webUrl,
       Timestamp: new Date().toISOString(),
-      StatusMail: statusMail,            // mapped to header "Status Mail"
-      MailCondition: mailCondition       // mapped to header "MailCondition"
+      StatusMail: statusMail,
+      MailCondition: mailCondition
     };
 
-    // Add the row
     await appendRow(tk, record);
 
-    // We no longer patch formulas; value is already set in the row.
+    res.json({ ok:true, id:readableId, folder:folder.webUrl,
+      counts:{ visitingCard:vcCount, boothPhotos:bpCount, catalogue:ctCount } });
 
-    res.json({
-      ok: true,
-      id: readableId,
-      folder: folder.webUrl,
-      counts: { visitingCard: vcCount, boothPhotos: bpCount, catalogue: ctCount }
-    });
-  } catch (e) {
-    console.error('Submit error full', e?.response?.data || e?.message || e);
-    const errBody = e?.response?.data || { message: e?.message || 'unknown server error' };
-    res.status(500).json({ ok: false, error: errBody });
+  } catch(e) {
+    res.status(500).json({ ok:false, error:e?.response?.data || e?.message || 'unknown server error' });
   }
 });
 
-// Start server
 const LISTEN_PORT = process.env.PORT || 8080;
 app.listen(LISTEN_PORT, () => console.log(`Server running on ${LISTEN_PORT}`));
